@@ -1,0 +1,6 @@
+my mcq project
+admin@test.com   admin123
+
+universitymis
+admin admin123
+student1 student123
