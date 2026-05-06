@@ -1,0 +1,150 @@
+==============================
+POSTGRESQL DISTRIBUTED DB (3 NODES)
+==============================
+
+STEP 0: Start PostgreSQL and open pgAdmin
+
+------------------------------
+STEP 1: Create 3 Nodes (Databases)
+------------------------------
+
+CREATE DATABASE node1;
+CREATE DATABASE node2;
+CREATE DATABASE node3;
+
+------------------------------
+STEP 2: Connect to node1
+------------------------------
+(Open Query Tool on node1)
+
+------------------------------
+STEP 3: Enable FDW Extension
+------------------------------
+
+CREATE EXTENSION postgres_fdw;
+
+------------------------------
+STEP 4: Create Server for node2
+------------------------------
+
+CREATE SERVER node2_server
+FOREIGN DATA WRAPPER postgres_fdw
+OPTIONS (
+    dbname 'node2',
+    host 'localhost',
+    port '5432'
+);
+
+------------------------------
+STEP 5: Create Server for node3
+------------------------------
+
+CREATE SERVER node3_server
+FOREIGN DATA WRAPPER postgres_fdw
+OPTIONS (
+    dbname 'node3',
+    host 'localhost',
+    port '5432'
+);
+
+------------------------------
+STEP 6: Create User Mapping
+(Replace your_password)
+------------------------------
+
+CREATE USER MAPPING FOR CURRENT_USER
+SERVER node2_server
+OPTIONS (
+    user 'postgres',
+    password 'your_password'
+);
+
+CREATE USER MAPPING FOR CURRENT_USER
+SERVER node3_server
+OPTIONS (
+    user 'postgres',
+    password 'your_password'
+);
+
+------------------------------
+STEP 7: Create Table in node2
+------------------------------
+(Switch to node2 → Query Tool)
+
+CREATE TABLE students_node2 (
+    id INT,
+    name VARCHAR(50)
+);
+
+INSERT INTO students_node2 VALUES
+(1, 'Ravi'),
+(2, 'Amit');
+
+------------------------------
+STEP 8: Create Table in node3
+------------------------------
+(Switch to node3 → Query Tool)
+
+CREATE TABLE students_node3 (
+    id INT,
+    name VARCHAR(50)
+);
+
+INSERT INTO students_node3 VALUES
+(3, 'Sneha'),
+(4, 'Neha');
+
+------------------------------
+STEP 9: Create Foreign Table in node1 (for node2)
+------------------------------
+(Switch back to node1)
+
+CREATE FOREIGN TABLE students_node2 (
+    id INT,
+    name VARCHAR(50)
+)
+SERVER node2_server
+OPTIONS (table_name 'students_node2');
+
+------------------------------
+STEP 10: Create Foreign Table in node1 (for node3)
+------------------------------
+
+CREATE FOREIGN TABLE students_node3 (
+    id INT,
+    name VARCHAR(50)
+)
+SERVER node3_server
+OPTIONS (table_name 'students_node3');
+
+------------------------------
+STEP 11: Access Data from node2
+------------------------------
+
+SELECT * FROM students_node2;
+
+------------------------------
+STEP 12: Access Data from node3
+------------------------------
+
+SELECT * FROM students_node3;
+
+------------------------------
+STEP 13: Combine Distributed Data
+------------------------------
+
+SELECT * FROM students_node2
+UNION
+SELECT * FROM students_node3;
+
+------------------------------
+STEP 14: Verify Distributed Query
+------------------------------
+
+EXPLAIN SELECT * FROM students_node2;
+
+(You should see "Foreign Scan")
+
+==============================
+END
+==============================
